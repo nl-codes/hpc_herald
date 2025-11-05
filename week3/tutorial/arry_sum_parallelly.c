@@ -3,10 +3,10 @@
 #include <pthread.h>
 #include <sys/time.h>
 
-#define SIZE 1000000000
+#define SIZE 100
 #define THREADS 4
 
-int *array;
+int* array;
 long long partial_sum[THREADS];
 
 void* thread_sum(void* arg) {
@@ -14,6 +14,7 @@ void* thread_sum(void* arg) {
     long long sum = 0;
     int start = tid * (SIZE / THREADS);
     int end = (tid == THREADS - 1) ? SIZE : start + (SIZE / THREADS);
+    printf("Thread id: %d ko start : %d and end : %d\n", tid, start, end);
 
     for (int i = start; i < end; i++)
         sum += array[i];

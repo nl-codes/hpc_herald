@@ -2,10 +2,10 @@
 #include <stdlib.h>
 #include <sys/time.h>
 
-#define SIZE 1000000000
+#define SIZE 100
 
 int main() {
-    int *array = malloc(SIZE * sizeof(int));
+    int* array = malloc(SIZE * sizeof(int));
     long long sum = 0;
     struct timeval start, end;
     double elapsed;
@@ -14,12 +14,12 @@ int main() {
         array[i] = 1;
 
     gettimeofday(&start, NULL);
-    
+
     for (int i = 0; i < SIZE; i++)
         sum += array[i];
     gettimeofday(&end, NULL);
-    
-        // print start and end times
+
+    // print start and end times
     printf("Start time: %ld.%06ld seconds\n", start.tv_sec, start.tv_usec);
     printf("End time  : %ld.%06ld seconds\n", end.tv_sec, end.tv_usec);
 
