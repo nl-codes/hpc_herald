@@ -4,7 +4,7 @@
 #include <math.h>
 
 int HIGHEST = 100;
-int THREADS;
+int THREADS_SIZE;
 int total_primes_found = 0;      // global counter
 pthread_mutex_t lock;            // mutex for synchronization
 pthread_t* threads;              // to allow global cancellation
@@ -21,8 +21,8 @@ int is_prime(int n) {
 void* find_primes(void* args) {
     int t_id = *(int*)args;
 
-    int start = t_id * (HIGHEST / THREADS) + 1;
-    int end = (t_id == THREADS - 1) ? HIGHEST : start + (HIGHEST / THREADS) - 1;
+    int start = t_id * (HIGHEST / THREADS_SIZE) + 1;
+    int end = (t_id == THREADS_SIZE - 1) ? HIGHEST : start + (HIGHEST / THREADS_SIZE) - 1;
 
     printf("Thread %d handling range %d - %d\n", t_id + 1, start, end);
 
@@ -40,7 +40,7 @@ void* find_primes(void* args) {
 
             // If 5th prime found, cancel all threads
             if (total_primes_found >= 5) {
-                for (int j = 0; j < THREADS; j++) {
+                for (int j = 0; j < THREADS_SIZE; j++) {
                     if (threads[j] != pthread_self()) {
                         pthread_cancel(threads[j]);
                     }
@@ -58,24 +58,24 @@ void* find_primes(void* args) {
 
 int main() {
     printf("Enter the number of threads: ");
-    scanf("%d", &THREADS);
+    scanf("%d", &THREADS_SIZE);
 
-    if (THREADS <= 0) {
+    if (THREADS_SIZE <= 0) {
         printf("Invalid input. Try again.\n");
         return 1;
     }
 
-    threads = malloc(THREADS * sizeof(pthread_t));
-    int* thread_ids = malloc(THREADS * sizeof(int));
+    threads = malloc(THREADS_SIZE * sizeof(pthread_t));
+    int* thread_ids = malloc(THREADS_SIZE * sizeof(int));
 
     pthread_mutex_init(&lock, NULL);
 
-    for (int i = 0; i < THREADS; i++) {
+    for (int i = 0; i < THREADS_SIZE; i++) {
         thread_ids[i] = i;
         pthread_create(&threads[i], NULL, find_primes, &thread_ids[i]);
     }
 
-    for (int i = 0; i < THREADS; i++) {
+    for (int i = 0; i < THREADS_SIZE; i++) {
         pthread_join(threads[i], NULL);
     }
 
