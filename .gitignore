@@ -2,3 +2,4 @@
 *.vscode
 week3/workshop/uni-given/
 **/o/
+.DS_Store
