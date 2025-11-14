@@ -1,5 +1,5 @@
 *.exe
 *.vscode
-week3/workshop/uni-given/
+**/uni-given/
 **/o/
 .DS_Store
