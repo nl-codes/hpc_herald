@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <omp.h>
 
 long encode(char* s) {
     long a, b, c, x;
@@ -12,25 +13,44 @@ long encode(char* s) {
 }
 
 int main() {
-    char s[4];
     long x, y;
-    int i, j, k;
+    char result[4] = { 0 };
+    int found = 0;
+
     printf("Enter the code: ");
     scanf("%ld", &x);
-    s[3] = '\0';
-    for (i = 0;i < 26;i++) {
-        s[0] = i + 'a';
-        for (j = 0;j < 26;j++) {
-            s[1] = j + 'a';
-            for (k = 0;k < 26;k++) {
-                s[2] = k + 'a';
-                y = encode(s);
-                if (x == y) {
-                    printf("The letters for code %ld are %s\n", y, s);
-                    exit(0);
+
+#pragma omp parallel for collapse(3) num_threads(16) shared(found, result)
+    for (int i = 0; i < 26; i++) {
+        for (int j = 0; j < 26; j++) {
+            for (int k = 0; k < 26; k++) {
+                // if some thread already found the answer
+                if (found) continue;
+                char s[4];
+                s[0] = 'a' + i;
+                s[1] = 'a' + j;
+                s[2] = 'a' + k;
+                s[3] = '\0';
+
+                long y = encode(s);
+                if (y == x) {
+#pragma omp critical
+                    {
+                        if (!found) {
+                            found = 1;
+                            result[0] = s[0];
+                            result[1] = s[1];
+                            result[2] = s[2];
+                            result[3] = '\0';
+                        }
+                    }
                 }
             }
         }
     }
+    if (found)
+        printf("The letters for code %ld are %s\n", x, result);
+    else
+        printf("No match found.\n");
     return 0;
 }
