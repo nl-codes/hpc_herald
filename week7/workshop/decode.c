@@ -11,7 +11,7 @@ long encode(char* s) {
     return x;
 }
 
-void main() {
+int main() {
     char s[4];
     long x, y;
     int i, j, k;
@@ -32,4 +32,5 @@ void main() {
             }
         }
     }
+    return 0;
 }

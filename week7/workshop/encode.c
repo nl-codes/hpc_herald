@@ -10,7 +10,7 @@ long encode(char* s) {
     return x;
 }
 
-void main() {
+int main() {
     char s[100];
     long x;
     printf("Enter 3 lowercase letters: ");
@@ -18,4 +18,5 @@ void main() {
     s[3] = '\0';
     x = encode(s);
     printf("Code for %s is %ld\n", s, x);
+    return 0;
 }
