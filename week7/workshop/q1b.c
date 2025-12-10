@@ -5,9 +5,19 @@
 #define total_books 3
 int booksAvailable = total_books;
 
+void borrower(int);
+
+int main() {
+#pragma omp parallel num_threads(5)
+    {
+        borrower(omp_get_thread_num() + 1);
+    }
+return 0;
+}
+
 void borrower(int id) {
     int i;
-    for (i = 0; i < 1; i++) {
+    for (i = 0; i < 5; i++) {
         while (1) {
             int book_borrowed = 0;
 #pragma omp critical(books)
@@ -32,12 +42,4 @@ void borrower(int id) {
         }
         usleep(5000);
     }
-}
-
-int main() {
-#pragma omp parallel num_threads(5)
-    {
-        borrower(omp_get_thread_num() + 1);
-    }
-return 0;
 }
