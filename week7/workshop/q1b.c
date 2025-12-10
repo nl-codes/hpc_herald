@@ -2,47 +2,42 @@
 #include <omp.h>
 #include <unistd.h>
 
-int booksAvailable = 3;
+#define total_books 3
+int booksAvailable = total_books;
 
 void borrower(int id) {
-    for (int i = 0; i < 5; i++) {
-
-        int success = 0;
-        while (!success) {
-            int old;
-
-            // atomic read + decrement
-#pragma omp atomic capture
-            { old = booksAvailable; booksAvailable--; }
-
-            if (old > 0) {
-                success = 1;   // borrow successful
-            } else {
-                // rolled below zero → revert
-#pragma omp atomic
-                booksAvailable++;
-
-                usleep(1000);
+    int i;
+    for (i = 0; i < 1; i++) {
+        while (1) {
+            int book_borrowed = 0;
+#pragma omp critical(books)
+            {
+                if (booksAvailable > 0) {
+                    printf("Borrower %d wants to borrow a book. Available = %d\n", id, booksAvailable);
+                    booksAvailable--;
+                    printf("Borrower %d got book. Remaining = %d\n", id, booksAvailable);
+                    printf("------------------------------------------------\n");
+                    book_borrowed = 1;
+                }
             }
+            usleep(1000);
+            if (book_borrowed == 1) break;
         }
 
-#pragma omp critical(printing)
-        printf("Borrower %d borrowed a book. Remaining = %d\n", id, booksAvailable);
-
-        usleep(10000); // reading
-
-        // return book
-#pragma omp atomic
-        booksAvailable++;
-
-#pragma omp critical(printing)
-        printf("Borrower %d returned a book. Now = %d\n", id, booksAvailable);
-
+#pragma omp critical(books)
+        {
+            booksAvailable++;
+            printf("Borrower %d returned a book. Updated to = %d\n", id, booksAvailable);
+            printf("------------------------------------------------\n");
+        }
         usleep(5000);
     }
 }
 
 int main() {
 #pragma omp parallel num_threads(5)
-    borrower(omp_get_thread_num() + 1);
+    {
+        borrower(omp_get_thread_num() + 1);
+    }
+return 0;
 }
