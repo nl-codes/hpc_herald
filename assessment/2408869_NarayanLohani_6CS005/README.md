@@ -35,7 +35,8 @@
     - [Problem Statement](#problem-statement)
     - [Solution Overview](#solution-overview)
     - [Key Features](#key-features)
-    - [How It Works](#how-it-works)
+    - [How It Works](#how-it-works-gist)
+    - [Detailed Explanation](#detailed-explanation)
     - [Error Handling and Robustness](#error-handling-and-robustness)
     - [Example Usage](#example-usage)
     - [Files](#files)
@@ -43,7 +44,8 @@
     - [Problem Statement](#problem-statement-1)
     - [Solution Overview](#solution-overview-1)
     - [Key Features](#key-features-1)
-    - [How It Works](#how-it-works-1)
+    - [How It Works](#how-it-works-gist-1)
+    - [Detailed Explanation](#detailed-explanation-1)
     - [Error Handling and Robustness](#error-handling-and-robustness-1)
     - [Example Usage](#example-usage-1)
     - [Files](#files-1)
@@ -82,7 +84,7 @@ The solution uses POSIX threads (pthreads) to parallelize the word counting proc
 - **Sorted Output:** The final word counts are sorted alphabetically before being written to the output file.
 - **Simple Usage:** The program is run as `./output <file_name> <num_threads>`, and results are written to `result.txt`.
 
-### How It Works
+### How It Works (Gist)
 
 1. **File Reading:**
    The entire input file is read into a buffer in memory.
@@ -98,6 +100,117 @@ The solution uses POSIX threads (pthreads) to parallelize the word counting proc
 
 5. **Sorting and Output:**
    After all threads finish, the word counts are sorted alphabetically and written to `result.txt`, with each line containing a word and its frequency.
+
+### Detailed Explanation
+
+1. **Initialization and Input Validation**
+The program begins with rigorous input validation:
+   - **Argument Count Check:** Requires exactly two arguments (filename and thread count) to prevent misuse
+   - **Thread Count Validation:** Ensures thread count is positive, preventing logical errors
+
+2. **Memory-Mapped File Processing Strategy**
+The `read_file_to_buffer()` function implements an efficient file reading approach:
+   - **Single Read Operation:** Entire file content is loaded into memory at once using `fread()`
+   - **Memory Optimization:** Buffer size equals exact file size + 1 byte for null termination
+   - **Sequential Access:** File pointer operations (`fseek`, `ftell`, `rewind`) efficiently determine file size without reading content twice
+   - **Error Handling:** Returns `NULL` on any failure (file open, memory allocation, read error)
+   - **File Accessibility:** Attempts to open and read the file early to fail fast if inaccessible
+
+3. **Thread Workload Division**
+The correct thread division lies in `fix_thread_boundaries()`:
+
+   **Original Problem:** Naively dividing file by byte count could split words mid-character, causing:
+
+   - Incomplete word extraction
+   - Duplicate counting of partial words
+   - Incorrect frequency results
+
+   Solution Approach:
+   ```c
+   long slice = file_size / num_threads;
+      for (int i = 0; i < num_threads; i++) {
+         long start = i * slice;
+         long end = (i == num_threads - 1) ? file_size : (i + 1) * slice;
+
+         // Adjust start (except for first thread) to the next non-alphanumeric character
+         if (i != 0) {
+               while (start < file_size && isalnum(buffer[start])) {
+                  start++;
+               }
+         }
+         // Adjust end (except for last thread) to the next non-alphanumeric character
+         if (i != num_threads - 1) {
+               while (end < file_size && isalnum(buffer[end])) {
+                  end++;
+               }
+         }
+      }
+   ```
+
+   - **First Thread:** Starts at exact byte 0 (beginning of file)
+   - **Intermediate Threads:** Start boundaries move forward until hitting a non-alphanumeric character (space)
+   - **Last Thread:** Ends at exact file end
+   - **Load Balancing:** While boundaries are adjusted, the initial equal division ensures relatively balanced workloads
+
+4. **Parallel Processing with Thread Synchronization**
+
+   Each thread executes `thread_routine_find_word_count()`:
+
+   **Word Extraction Algorithm:**
+
+   1. **Character-by-Character Scanning:** Iterates through assigned buffer segment
+   2. **Alphanumeric Detection:** Uses `isalnum()` to identify word characters
+   3. **Case Normalization:** Converts all characters to lowercase via `tolower()`
+   4. **Word Buffering:** Accumulates characters until non-alphanumeric encountered
+   5. **Word Completion:** Null-terminates buffer and processes complete word
+
+   **Critical Design Choice:** Each thread uses a local `word[MAX_WORD_LEN]` buffer to avoid contention during character accumulation, only accessing shared data when a complete word is ready.
+
+5. **Thread-Safe Global Data Management**
+
+   The `handle_words()` function implements a synchronized update mechanism:
+
+   **Shared Resources:**
+   - `words[]`: Global array of `WordCount` structures
+   - `word_count`: Global counter of unique words
+
+   **Synchronization Strategy:**
+
+   ```c
+   pthread_mutex_lock(&lock);
+   // Critical section: search and update word count
+   pthread_mutex_unlock(&lock);
+   ```
+
+   **Update Logic:**
+
+   1. **Linear Search:** Checks if word already exists in global array (O(n) per word)
+   2. **Two Possible Outcomes:**
+      - **Word Exists:** Increment count, release lock, return immediately
+      - **New Word:** Copy word to array, set count to 1, increment `word_count`
+   3. **Memory Safety:** Uses `strncpy` with bounds checking to prevent buffer overflows
+
+6. **Post-Processing and Output**
+
+   After all threads complete:
+
+   **Sorting Phase:**
+   - Uses `qsort()` with `compare_routine()` for alphabetical ordering
+   - Comparison function uses `strcmp()` for standard lexicographic ordering
+
+   **Output Generation:**
+   - Creates `result.txt` with simple "word count" format
+   - One entry per line for easy parsing
+
+7. **Resource Cleanup**
+
+   The program manages resources:
+
+   1. **Mutex Destruction:** Releases synchronization primitive
+   2. **Buffer Deallocation:** Frees the file buffer memory
+   3. **Implicit Cleanup:** Thread resources released via `pthread_join()`
+
+---
 
 ### Error Handling and Robustness
 
@@ -148,7 +261,7 @@ This solution leverages OpenMP to parallelize matrix operations for improved per
 - **Clear Error Reporting:** Provides informative error messages for all input and runtime errors.
 - **Memory Safety:** Ensures all allocated memory is properly freed, even in error cases.
 
-### How It Works
+### How It Works (Gist)
 
 1. **Input Reading:**
    The program reads matrices from a file. Each matrix starts with a header line (e.g., `3,4` for a 3x4 matrix), followed by the specified number of data rows. Blank or whitespace-only lines are ignored.
@@ -164,6 +277,75 @@ This solution leverages OpenMP to parallelize matrix operations for improved per
 
 4. **Output:**
    Results are written to a file named `result_<inputfilename>`, with clear section headers and CSV-formatted matrices.
+
+### Detailed Explanation
+
+
+1. **Input Reading**
+
+Matrices are read using a dedicated parsing function that:
+
+- **Skips blank or whitespace-only lines**
+- **Validates the matrix header** (`rows,cols`)
+- **Reads and validates each row** of numerical data
+- **Rejects malformed or incomplete matrices** immediately
+
+Each matrix is dynamically allocated as a 2D array of doubles.
+
+---
+
+2. **Matrix Pair Processing**
+
+Matrices are processed **two at a time**. For each pair:
+
+### Element-wise Operations
+Performed only if both matrices have identical dimensions:
+
+- **Addition**
+- **Subtraction**
+- **Element-wise multiplication**
+- **Element-wise division** (division by zero yields `NaN`)
+
+Each operation is parallelized using `#pragma omp parallel for`.
+
+### Transpose Operations
+Both matrices are transposed regardless of size compatibility.
+This operation swaps rows and columns and is fully parallelized.
+
+### Matrix Multiplication
+Executed only when:
+`columns(A) == rows(B)`
+
+The resulting matrix has dimensions:
+`rows(A) × columns(B)`
+
+If dimensions are incompatible, a descriptive message is written instead of performing the operation.
+
+---
+
+## Parallel Execution
+
+- The number of threads is provided by the user at runtime
+- OpenMP distributes work across threads at the loop level
+- No shared writable state is used, ensuring thread safety
+
+---
+
+## Error Handling and Robustness
+
+The program is designed for real-world input and handles errors gracefully:
+
+- **Invalid Headers** – Detects malformed or non-positive dimensions
+- **Malformed Rows** – Rejects rows with missing, extra, or non-numeric values
+- **Unexpected EOF** – Detects incomplete matrices
+- **File Errors** – Handles file open/read/write failures
+- **Invalid Thread Count** – Ensures thread count is positive
+
+On any error:
+
+- A clear message is printed to `stderr`
+- All allocated memory is freed
+- The program exits cleanly without undefined behavior
 
 ### Error Handling and Robustness
 
@@ -190,7 +372,6 @@ The output will be written to `result_MatData.txt` in the same directory.
 - `result_<input_file>` — Output file generated by the program.
 
 ---
-
 
 ## Dependencies
 
