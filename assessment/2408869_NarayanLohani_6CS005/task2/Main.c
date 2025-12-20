@@ -274,7 +274,15 @@ int main(int argc, char* argv[]) {
     }
 
     int num_threads = atoi(argv[2]);
-    FILE* output_file = fopen("results.txt", "w");
+
+    char output_filename[256];
+    snprintf(output_filename, sizeof(output_filename), "result_%s", argv[1]);
+    FILE* output_file = fopen(output_filename, "w");
+    if (!output_file) {
+        fprintf(stderr, "Cannot open output file: %s\n", output_filename);
+        fclose(input_file);
+        return 1;
+    }
 
     int matrix_pair_count = 0;
 
