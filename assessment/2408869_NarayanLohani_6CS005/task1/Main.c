@@ -57,11 +57,11 @@ void write_results(const char* filename);
 int main(int argc, char* argv[]) {
     // Check the usage
     if (argc != 3) {
-        printf("Usage invalid.\nFormat : ./output thread_nums file_name");
+        printf("Usage invalid.\nFormat : ./output file_name thread_nums");
         return 1;
     }
 
-    int num_threads = atoi(argv[1]);
+    int num_threads = atoi(argv[2]);
     if (num_threads <= 0) {
         printf("Number of threads must be greater than 0.\n");
         return 1;
@@ -69,7 +69,7 @@ int main(int argc, char* argv[]) {
 
     long file_size;
     // Read the entire file into a buffer
-    char* buffer = read_file_to_buffer(argv[2], &file_size);
+    char* buffer = read_file_to_buffer(argv[1], &file_size);
     if (!buffer) {
         printf("Failed to read file.\n");
         return 1;
