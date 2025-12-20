@@ -202,7 +202,7 @@ double** multiply_matrices(double** matrix_a, double** matrix_b, int rows_a, int
  * @param num_threads Number of threads to use
  */
 void process_matrix_pair(FILE* file, double** matrix_a, double** matrix_b, int rows_a, int cols_a, int rows_b, int cols_b, int num_threads, int matrix_number) {
-    fprintf(file, "\n================================================================================\n");
+    fprintf(file, "================================================================================\n");
     fprintf(file, "----------       First: (%d, %d)   MATRIX PAIR - %d   Second: (%d,%d)      ----------\n", rows_a, cols_a, matrix_number, rows_b, cols_b);
     fprintf(file, "================================================================================\n\n");
 
@@ -228,9 +228,9 @@ void process_matrix_pair(FILE* file, double** matrix_a, double** matrix_b, int r
         print_matrix(file, result, rows_a, cols_a);
         free_matrix(result, rows_a);
     } else {
-        fprintf(file, "Addition not possible (different sizes)\n");
-        fprintf(file, "Subtraction not possible (different sizes)\n");
-        fprintf(file, "Element-wise operations not possible (different sizes)\n");
+        fprintf(file, "Addition not possible (different sizes [%d,%d] and [%d,%d])\n", rows_a, cols_a, rows_b, cols_b);
+        fprintf(file, "Subtraction not possible (different sizes) [%d,%d] and [%d,%d]\n", rows_a, cols_a, rows_b, cols_b);
+        fprintf(file, "Element-wise operations not possible (different sizes [%d,%d] and [%d,%d])\n", rows_a, cols_a, rows_b, cols_b);
     }
 
     // Transpose operations
@@ -251,8 +251,9 @@ void process_matrix_pair(FILE* file, double** matrix_a, double** matrix_b, int r
         print_matrix(file, result, rows_a, cols_b);
         free_matrix(result, rows_a);
     } else {
-        fprintf(file, "\nMatrix Multiply not possible (Acols != Brows)\n");
+        fprintf(file, "\nMatrix Multiply not possible [%d,%d] and [%d,%d] : Acols != Brows\n", rows_a, cols_a, rows_b, cols_b);
     }
+    fprintf(file, "\n");
 }
 
 /**
@@ -261,25 +262,34 @@ void process_matrix_pair(FILE* file, double** matrix_a, double** matrix_b, int r
  * @param argv Argument vector
  * @return 0 on success, non-zero on error
  */
+ // ...existing code...
+
 int main(int argc, char* argv[]) {
     if (argc < 3) {
-        printf("Usage: ./matrix <file> <threads>\n");
+        fprintf(stderr, "Usage: ./matrix <file> <threads>\n");
         return 1;
     }
 
+    // Try to open input file
     FILE* input_file = fopen(argv[1], "r");
     if (!input_file) {
-        printf("Cannot open input file.\n");
+        fprintf(stderr, "Error: Cannot open input file '%s'.\n", argv[1]);
         return 1;
     }
 
     int num_threads = atoi(argv[2]);
+    if (num_threads <= 0) {
+        fprintf(stderr, "Error: Invalid number of threads: %s\n", argv[2]);
+        fclose(input_file);
+        return 1;
+    }
 
+    // Dynamically create output file name: result_<inputfilename>
     char output_filename[256];
     snprintf(output_filename, sizeof(output_filename), "result_%s", argv[1]);
     FILE* output_file = fopen(output_filename, "w");
     if (!output_file) {
-        fprintf(stderr, "Cannot open output file: %s\n", output_filename);
+        fprintf(stderr, "Error: Cannot open output file '%s' for writing.\n", output_filename);
         fclose(input_file);
         return 1;
     }
@@ -290,9 +300,17 @@ int main(int argc, char* argv[]) {
     while (1) {
         int rows_a, cols_a, rows_b, cols_b;
         double** matrix_a = read_matrix_from_file(input_file, &rows_a, &cols_a);
-        if (!matrix_a) break;
+        if (!matrix_a) {
+            if (ferror(input_file)) {
+                fprintf(stderr, "Error: File read error occurred while reading matrix A (pair %d).\n", matrix_pair_count + 1);
+            }
+            break;
+        }
         double** matrix_b = read_matrix_from_file(input_file, &rows_b, &cols_b);
         if (!matrix_b) {
+            if (ferror(input_file)) {
+                fprintf(stderr, "Error: File read error occurred while reading matrix B (pair %d).\n", matrix_pair_count + 1);
+            }
             free_matrix(matrix_a, rows_a);
             break;
         }
@@ -302,6 +320,13 @@ int main(int argc, char* argv[]) {
 
         free_matrix(matrix_a, rows_a);
         free_matrix(matrix_b, rows_b);
+    }
+
+    if (ferror(input_file)) {
+        fprintf(stderr, "Error: An error occurred while reading the input file.\n");
+    }
+    if (ferror(output_file)) {
+        fprintf(stderr, "Error: An error occurred while writing to the output file.\n");
     }
 
     fclose(input_file);
