@@ -367,23 +367,25 @@ void process_matrix_pair(FILE* file, double** matrix_a, double** matrix_b, int r
 
     // Element-wise operations (only if dimensions match)
     if (rows_a == rows_b && cols_a == cols_b) {
+        int capped_threads = (num_threads > rows_a) ? rows_a : num_threads;
+
         fprintf(file, "Addition (%d x %d)\n", rows_a, cols_a);
-        double** result = add_matrices(matrix_a, matrix_b, rows_a, cols_a, num_threads);
+        double** result = add_matrices(matrix_a, matrix_b, rows_a, cols_a, capped_threads);
         print_matrix(file, result, rows_a, cols_a);
         free_matrix(result, rows_a);
 
         fprintf(file, "\nSubtraction (%d x %d)\n", rows_a, cols_a);
-        result = subtract_matrices(matrix_a, matrix_b, rows_a, cols_a, num_threads);
+        result = subtract_matrices(matrix_a, matrix_b, rows_a, cols_a, capped_threads);
         print_matrix(file, result, rows_a, cols_a);
         free_matrix(result, rows_a);
 
         fprintf(file, "\nElement-wise Multiply (%d x %d)\n", rows_a, cols_a);
-        result = multiply_elementwise(matrix_a, matrix_b, rows_a, cols_a, num_threads);
+        result = multiply_elementwise(matrix_a, matrix_b, rows_a, cols_a, capped_threads);
         print_matrix(file, result, rows_a, cols_a);
         free_matrix(result, rows_a);
 
         fprintf(file, "\nElement-wise Divide (%d x %d)\n", rows_a, cols_a);
-        result = divide_elementwise(matrix_a, matrix_b, rows_a, cols_a, num_threads);
+        result = divide_elementwise(matrix_a, matrix_b, rows_a, cols_a, capped_threads);
         print_matrix(file, result, rows_a, cols_a);
         free_matrix(result, rows_a);
     } else {
@@ -393,20 +395,23 @@ void process_matrix_pair(FILE* file, double** matrix_a, double** matrix_b, int r
     }
 
     // Transpose operations
+    int transpose_threads_a = (num_threads > rows_a) ? rows_a : num_threads;
     fprintf(file, "\nTranspose A (%d x %d)\n", cols_a, rows_a);
-    double** transposed = transpose_matrix(matrix_a, rows_a, cols_a, num_threads);
+    double** transposed = transpose_matrix(matrix_a, rows_a, cols_a, transpose_threads_a);
     print_matrix(file, transposed, cols_a, rows_a);
     free_matrix(transposed, cols_a);
 
+    int transpose_threads_b = (num_threads > rows_b) ? rows_b : num_threads;
     fprintf(file, "\nTranspose B (%d x %d)\n", cols_b, rows_b);
-    transposed = transpose_matrix(matrix_b, rows_b, cols_b, num_threads);
+    transposed = transpose_matrix(matrix_b, rows_b, cols_b, transpose_threads_b);
     print_matrix(file, transposed, cols_b, rows_b);
     free_matrix(transposed, cols_b);
 
     // Matrix multiplication (only if matrix_a's columns == matrix_b's rows)
     if (cols_a == rows_b) {
+        int mult_threads = (num_threads > rows_a) ? rows_a : num_threads;
         fprintf(file, "\nMatrix Multiply A x B (%d x %d)\n", rows_a, cols_b);
-        double** result = multiply_matrices(matrix_a, matrix_b, rows_a, cols_a, cols_b, num_threads);
+        double** result = multiply_matrices(matrix_a, matrix_b, rows_a, cols_a, cols_b, mult_threads);
         print_matrix(file, result, rows_a, cols_b);
         free_matrix(result, rows_a);
     } else {
