@@ -1,4 +1,3 @@
-
 ================================================================================
 ----------       First: (3, 4)   MATRIX PAIR - 1   Second: (3,4)      ----------
 ================================================================================
@@ -35,15 +34,15 @@ Transpose B (4 x 3)
 929529.038283, 833649.519395, 585594.901251
 191716.041160, 324261.752064, 726643.288179
 
-Matrix Multiply not possible (Acols != Brows)
+Matrix Multiply not possible [3,4] and [3,4] : Acols != Brows
 
 ================================================================================
 ----------       First: (4, 6)   MATRIX PAIR - 2   Second: (6,2)      ----------
 ================================================================================
 
-Addition not possible (different sizes)
-Subtraction not possible (different sizes)
-Element-wise operations not possible (different sizes)
+Addition not possible (different sizes [4,6] and [6,2])
+Subtraction not possible (different sizes) [4,6] and [6,2]
+Element-wise operations not possible (different sizes [4,6] and [6,2])
 
 Transpose A (6 x 4)
 829878.482878, 793478.381145, 113235.400602, 714549.069657
@@ -120,9 +119,9 @@ Matrix Multiply A x B (5 x 5)
 ----------       First: (8, 4)   MATRIX PAIR - 4   Second: (4,8)      ----------
 ================================================================================
 
-Addition not possible (different sizes)
-Subtraction not possible (different sizes)
-Element-wise operations not possible (different sizes)
+Addition not possible (different sizes [8,4] and [4,8])
+Subtraction not possible (different sizes) [8,4] and [4,8]
+Element-wise operations not possible (different sizes [8,4] and [4,8])
 
 Transpose A (4 x 8)
 283787.059742, 402888.308356, 842184.023963, 244202.729792, 179152.880305, 207577.601883, 301503.384297, 375266.486763
@@ -260,15 +259,15 @@ Transpose B (3 x 7)
 373928.839270, 783552.395429, 650866.716972, 855904.311542, 509523.641498, 876005.441964, 576853.766195
 411230.525877, 751528.591668, 443331.701761, 320847.636521, 949271.123265, 538949.205677, 611433.470940
 
-Matrix Multiply not possible (Acols != Brows)
+Matrix Multiply not possible [7,3] and [7,3] : Acols != Brows
 
 ================================================================================
 ----------       First: (10, 8)   MATRIX PAIR - 7   Second: (8,10)      ----------
 ================================================================================
 
-Addition not possible (different sizes)
-Subtraction not possible (different sizes)
-Element-wise operations not possible (different sizes)
+Addition not possible (different sizes [10,8] and [8,10])
+Subtraction not possible (different sizes) [10,8] and [8,10]
+Element-wise operations not possible (different sizes [10,8] and [8,10])
 
 Transpose A (8 x 10)
 902370.502347, 34106.945570, 886870.411207, 397776.343528, 980257.385517, 986676.704324, 403748.600664, 741728.576810, 372310.252323, 735357.543518
@@ -352,7 +351,7 @@ Transpose B (4 x 6)
 270995.064561, 32547.615011, 728969.232378, 995881.690444, 252935.817468, 674022.902664
 39473.815212, 285706.871722, 832007.960746, 356258.741337, 417267.789704, 551682.030454
 
-Matrix Multiply not possible (Acols != Brows)
+Matrix Multiply not possible [6,4] and [6,4] : Acols != Brows
 
 ================================================================================
 ----------       First: (12, 12)   MATRIX PAIR - 9   Second: (12,12)      ----------
@@ -460,9 +459,9 @@ Matrix Multiply A x B (12 x 12)
 ----------       First: (5, 7)   MATRIX PAIR - 10   Second: (7,2)      ----------
 ================================================================================
 
-Addition not possible (different sizes)
-Subtraction not possible (different sizes)
-Element-wise operations not possible (different sizes)
+Addition not possible (different sizes [5,7] and [7,2])
+Subtraction not possible (different sizes) [5,7] and [7,2]
+Element-wise operations not possible (different sizes [5,7] and [7,2])
 
 Transpose A (7 x 5)
 845165.102429, 122407.591126, 707991.432516, 986088.875111, 354076.656677
@@ -534,9 +533,9 @@ Matrix Multiply A x B (4 x 4)
 ----------       First: (6, 6)   MATRIX PAIR - 12   Second: (3,3)      ----------
 ================================================================================
 
-Addition not possible (different sizes)
-Subtraction not possible (different sizes)
-Element-wise operations not possible (different sizes)
+Addition not possible (different sizes [6,6] and [3,3])
+Subtraction not possible (different sizes) [6,6] and [3,3]
+Element-wise operations not possible (different sizes [6,6] and [3,3])
 
 Transpose A (6 x 6)
 30263.440823, 136156.929756, 34787.120798, 572138.180114, 286345.532708, 93450.356988
@@ -551,15 +550,15 @@ Transpose B (3 x 3)
 728599.563380, 630930.747955, 215878.903676
 951205.822098, 132340.472788, 974670.146777
 
-Matrix Multiply not possible (Acols != Brows)
+Matrix Multiply not possible [6,6] and [3,3] : Acols != Brows
 
 ================================================================================
 ----------       First: (4, 5)   MATRIX PAIR - 13   Second: (5,4)      ----------
 ================================================================================
 
-Addition not possible (different sizes)
-Subtraction not possible (different sizes)
-Element-wise operations not possible (different sizes)
+Addition not possible (different sizes [4,5] and [5,4])
+Subtraction not possible (different sizes) [4,5] and [5,4]
+Element-wise operations not possible (different sizes [4,5] and [5,4])
 
 Transpose A (5 x 4)
 300971.768890, 679238.785064, 655028.037245, 920174.964885
@@ -630,15 +629,15 @@ Transpose B (3 x 7)
 261665.564563, 305794.125516, 889231.707792, 345498.678505, 173553.432442, 12765.444275, 600656.047074
 414674.107677, 551305.776477, 85688.112788, 733561.376424, 224035.489232, 109857.509189, 803831.891809
 
-Matrix Multiply not possible (Acols != Brows)
+Matrix Multiply not possible [7,3] and [7,3] : Acols != Brows
 
 ================================================================================
 ----------       First: (6, 8)   MATRIX PAIR - 15   Second: (8,6)      ----------
 ================================================================================
 
-Addition not possible (different sizes)
-Subtraction not possible (different sizes)
-Element-wise operations not possible (different sizes)
+Addition not possible (different sizes [6,8] and [8,6])
+Subtraction not possible (different sizes) [6,8] and [8,6]
+Element-wise operations not possible (different sizes [6,8] and [8,6])
 
 Transpose A (8 x 6)
 85289.812437, 639301.578256, 797310.416065, 903217.550520, 139845.563149, 482805.524055
@@ -714,7 +713,7 @@ Transpose B (4 x 6)
 64366.793273, 365930.393070, 445643.912442, 260012.355567, 215759.539861, 128747.264397
 446798.578174, 973119.315585, 588397.147081, 683964.482241, 334037.919201, 364570.446428
 
-Matrix Multiply not possible (Acols != Brows)
+Matrix Multiply not possible [6,4] and [6,4] : Acols != Brows
 
 ================================================================================
 ----------       First: (5, 5)   MATRIX PAIR - 17   Second: (5,5)      ----------
@@ -812,9 +811,9 @@ Matrix Multiply A x B (3 x 3)
 ----------       First: (9, 5)   MATRIX PAIR - 19   Second: (5,9)      ----------
 ================================================================================
 
-Addition not possible (different sizes)
-Subtraction not possible (different sizes)
-Element-wise operations not possible (different sizes)
+Addition not possible (different sizes [9,5] and [5,9])
+Subtraction not possible (different sizes) [9,5] and [5,9]
+Element-wise operations not possible (different sizes [9,5] and [5,9])
 
 Transpose A (5 x 9)
 252975.393473, 624041.919088, 778444.812967, 857141.704997, 696750.504265, 775805.910782, 890306.660787, 571567.208892, 560269.595948
@@ -885,7 +884,7 @@ Transpose B (6 x 3)
 908652.310025, 604170.100525, 759692.238349
 741678.169294, 239547.409148, 690973.571116
 
-Matrix Multiply not possible (Acols != Brows)
+Matrix Multiply not possible [3,6] and [3,6] : Acols != Brows
 
 ================================================================================
 ----------       First: (4, 4)   MATRIX PAIR - 21   Second: (4,4)      ----------
@@ -937,9 +936,9 @@ Matrix Multiply A x B (4 x 4)
 ----------       First: (6, 2)   MATRIX PAIR - 22   Second: (2,6)      ----------
 ================================================================================
 
-Addition not possible (different sizes)
-Subtraction not possible (different sizes)
-Element-wise operations not possible (different sizes)
+Addition not possible (different sizes [6,2] and [2,6])
+Subtraction not possible (different sizes) [6,2] and [2,6]
+Element-wise operations not possible (different sizes [6,2] and [2,6])
 
 Transpose A (2 x 6)
 855703.168531, 458482.486863, 858700.883511, 532122.395582, 914328.487849, 283126.444261
@@ -965,9 +964,9 @@ Matrix Multiply A x B (6 x 6)
 ----------       First: (8, 4)   MATRIX PAIR - 23   Second: (4,8)      ----------
 ================================================================================
 
-Addition not possible (different sizes)
-Subtraction not possible (different sizes)
-Element-wise operations not possible (different sizes)
+Addition not possible (different sizes [8,4] and [4,8])
+Subtraction not possible (different sizes) [8,4] and [4,8]
+Element-wise operations not possible (different sizes [8,4] and [4,8])
 
 Transpose A (4 x 8)
 680054.286475, 256245.105381, 699765.808307, 576745.578443, 473154.471414, 220442.521011, 882363.362302, 715058.975636
