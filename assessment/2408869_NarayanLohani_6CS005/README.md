@@ -1,7 +1,7 @@
-<table>
-  <tr>
+<table style="border:none">
+  <tr style="border:none">
     <td align="center">
-      <img src="https://heraldcollege.edu.np/images/footer/footer-logo-dark.svg" alt="Herald College Kathmandu" width="180"/>
+      <img src="https://heraldcollege.edu.np/images/footer/footer-logo.svg" alt="Herald College Kathmandu" width="180"/>
     </td>
     <td style="width:200px"></td>
     <td align="center">
