@@ -54,18 +54,17 @@
 
 ---
 
-## Introduction
+# Introduction
 
 This project demonstrates the use of parallel and concurrent programming techniques in C to solve two practical problems:
 
 - **[Task 1:](#task-1-count-frequency-of-the-word)** Counting the frequency of each word in a large text file using multithreading (pthreads).
-- **[Task 2:](#task-1-count-frequency-of-the-word)** Performing a variety of matrix operations (addition, subtraction, multiplication, transpose, etc.) on large datasets using parallelism (OpenMP).
+- **[Task 2:](#task-2-matrix-operations)** Performing a variety of matrix operations (addition, subtraction, multiplication, transpose, etc.) on large datasets using parallelism (OpenMP).
 
-The solutions are robust, efficient, and designed to handle real-world data with comprehensive error handling and clear output formatting.
 
 ---
 
-## Task 1: Count Frequency of the Word
+# Task 1: Count Frequency of the Word
 
 ### Problem Statement
 
@@ -242,7 +241,7 @@ word2 count2
 
 ---
 
-## Task 2: Matrix Operations
+# Task 2: Matrix Operations
 
 ### Problem Statement
 
@@ -269,7 +268,7 @@ This solution leverages OpenMP to parallelize matrix operations for improved per
 2. **Matrix Pair Processing:**
    Matrices are processed in pairs. For each pair, the following operations are attempted:
    - **Addition, Subtraction, Element-wise Multiplication/Division:** Performed if the matrices have the same dimensions.
-   - **Transpose:** Both matrices are transposed and printed.
+   - **Transpose:** Both matrices are transposed and written to the output file.
    - **Matrix Multiplication:** Performed if the number of columns in the first matrix matches the number of rows in the second.
 
 3. **Parallelism:**
@@ -280,72 +279,49 @@ This solution leverages OpenMP to parallelize matrix operations for improved per
 
 ### Detailed Explanation
 
-
 1. **Input Reading**
 
-Matrices are read using a dedicated parsing function that:
+   Matrices are read using a dedicated parsing function that:
 
-- **Skips blank or whitespace-only lines**
-- **Validates the matrix header** (`rows,cols`)
-- **Reads and validates each row** of numerical data
-- **Rejects malformed or incomplete matrices** immediately
+   - **Skips blank or whitespace-only lines**
+   - **Validates the matrix header** `rows,cols`
+   - **Reads and validates each row** of numerical data
+   - **Rejects malformed or incomplete matrices** immediately
 
-Each matrix is dynamically allocated as a 2D array of doubles.
-
----
+   Each matrix is dynamically allocated as a 2D array of doubles.
 
 2. **Matrix Pair Processing**
 
-Matrices are processed **two at a time**. For each pair:
+   Matrices are processed **two at a time**. For each pair:
 
-### Element-wise Operations
-Performed only if both matrices have identical dimensions:
+   #### Element-wise Operations:
+    Performed only if both matrices have identical dimensions:
 
-- **Addition**
-- **Subtraction**
-- **Element-wise multiplication**
-- **Element-wise division** (division by zero yields `NaN`)
+   - **Addition**
+   - **Subtraction**
+   - **Element-wise multiplication**
+   - **Element-wise division** (division by zero yields `NaN`)
 
-Each operation is parallelized using `#pragma omp parallel for`.
+   Each operation is parallelized using `#pragma omp parallel for`.
 
-### Transpose Operations
-Both matrices are transposed regardless of size compatibility.
-This operation swaps rows and columns and is fully parallelized.
+   #### Transpose Operations:
+   Both matrices are transposed regardless of size compatibility.
+   This operation swaps rows and columns and is fully parallelized.
 
-### Matrix Multiplication
-Executed only when:
-`columns(A) == rows(B)`
+   #### Matrix Multiplication:
+   Executed only when: `columns(A) == rows(B)`
 
-The resulting matrix has dimensions:
-`rows(A) × columns(B)`
+   The resulting matrix has dimensions: `rows(A) × columns(B)`
 
-If dimensions are incompatible, a descriptive message is written instead of performing the operation.
+   If dimensions are incompatible, a descriptive message is written instead of performing the operation.
 
----
 
-## Parallel Execution
+3. **Parallel Execution**
 
-- The number of threads is provided by the user at runtime
-- OpenMP distributes work across threads at the loop level
-- No shared writable state is used, ensuring thread safety
-
----
-
-## Error Handling and Robustness
-
-The program is designed for real-world input and handles errors gracefully:
-
-- **Invalid Headers** – Detects malformed or non-positive dimensions
-- **Malformed Rows** – Rejects rows with missing, extra, or non-numeric values
-- **Unexpected EOF** – Detects incomplete matrices
-- **File Errors** – Handles file open/read/write failures
-- **Invalid Thread Count** – Ensures thread count is positive
-
-On any error:
-
-- A clear message is printed to `stderr`
-- All allocated memory is freed
-- The program exits cleanly without undefined behavior
+   - The number of threads is provided by the user at runtime
+   - If number of threads exceeds the dimension of matrix, then it is capped
+   - OpenMP distributes work across threads at the loop level
+   - No shared writable state is used, ensuring thread safety
 
 ### Error Handling and Robustness
 
@@ -388,15 +364,15 @@ The output will be written to `result_MatData.txt` in the same directory.
 .
 ├── README.md
 ├── task1
-│   ├── Main.c                   # Source code for Task 1 (Word Frequency Counter)
-│   ├── WordOccurrenceDataset.txt# Input dataset for Task 1
-│   └── result.txt               # Output: word frequencies (Task 1)
+│   ├── Main.c                     # Source code for Task 1 (Word Frequency Counter)
+│   ├── WordOccurrenceDataset.txt  # Input dataset for Task 1
+│   └── result.txt                 # Output: word frequencies (Task 1)
 ├── task2
-│   ├── Main.c                   # Source code for Task 2 (Matrix Operations)
-│   ├── Matrices.txt             # Input file for Task 2
-│   ├── MatData.txt              # Input file for Task 2
-│   ├── result_Matrices.txt      # Output for Matrices.txt (Task 2)
-│   └── result_MatData.txt       # Output for MatData.txt (Task 2)
+│   ├── Main.c                     # Source code for Task 2 (Matrix Operations)
+│   ├── Matrices.txt               # Input file for Task 2
+│   ├── MatData.txt                # Input file for Task 2
+│   ├── result_Matrices.txt        # Output for Matrices.txt (Task 2)
+│   └── result_MatData.txt         # Output for MatData.txt (Task 2)
 ```
 
 - Each `Main.c` file is self-contained and well-documented.
