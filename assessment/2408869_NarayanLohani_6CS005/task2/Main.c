@@ -3,10 +3,14 @@
  * --------------------------------------
  * This program reads pairs of matrices from a file, performs various operations
  * (addition, subtraction, element-wise multiplication/division, transpose, and matrix multiplication)
- * using OpenMP for parallelism, and writes the results to "results.txt".
+ * using OpenMP for parallelism, and writes the results to "result_<inputfilename>".
  *
- * The code is modularized into smaller functions for clarity and maintainability.
- * Each function is documented, and in-line comments are provided where necessary.
+ * Features:
+ * - Robust error handling for file I/O and matrix parsing.
+ * - Skips blank/whitespace lines in input.
+ * - Validates matrix headers and row/column counts.
+ * - Handles non-numeric tokens gracefully.
+ * - Modular, documented code.
  */
 
 #include <stdio.h>
@@ -15,19 +19,119 @@
 #include <omp.h>
 #include <ctype.h>
 #include <errno.h>
-
+ /**
+  * @brief Allocates a 2D matrix of doubles.
+  * @param rows Number of rows
+  * @param cols Number of columns
+  * @return Pointer to the allocated matrix
+  */
 double** allocate_matrix(int rows, int cols);
-void free_matrix(double** matrix, int rows);
-void print_matrix(FILE* file, double** matrix, int rows, int cols);
-double** read_matrix_from_file(FILE* file, int* out_rows, int* out_cols);
-double** transpose_matrix(double** matrix, int rows, int cols, int num_threads);
-double** add_matrices(double** matrix_a, double** matrix_b, int rows, int cols, int num_threads);
-double** subtract_matrices(double** matrix_a, double** matrix_b, int rows, int cols, int num_threads);
-double** multiply_elementwise(double** matrix_a, double** matrix_b, int rows, int cols, int num_threads);
-double** divide_elementwise(double** matrix_a, double** matrix_b, int rows, int cols, int num_threads);
-double** multiply_matrices(double** matrix_a, double** matrix_b, int rows_a, int cols_a, int cols_b, int num_threads);
-void process_matrix_pair(FILE* file, double** matrix_a, double** matrix_b, int rows_a, int cols_a, int rows_b, int cols_b, int num_threads, int matrix_number);
 
+/**
+ * @brief Frees a 2D matrix of doubles.
+ * @param matrix Pointer to the matrix
+ * @param rows Number of rows
+ */
+void free_matrix(double** matrix, int rows);
+
+/**
+ * @brief Prints a matrix to a file in CSV format.
+ * @param file Output file pointer
+ * @param matrix Matrix to print
+ * @param rows Number of rows
+ * @param cols Number of columns
+ */
+void print_matrix(FILE* file, double** matrix, int rows, int cols);
+
+/**
+ * @brief Reads a matrix from a file, skipping blank lines and validating input.
+ * @param file Input file pointer
+ * @param out_rows Pointer to store number of rows
+ * @param out_cols Pointer to store number of columns
+ * @return Pointer to the allocated matrix, or NULL on error or EOF
+ */
+double** read_matrix_from_file(FILE* file, int* out_rows, int* out_cols);
+
+/**
+ * @brief Performs the transpose of a matrix in parallel.
+ * @param matrix Input matrix
+ * @param rows Number of rows in matrix
+ * @param cols Number of columns in matrix
+ * @param num_threads Number of threads to use
+ * @return Transposed matrix
+ */
+double** transpose_matrix(double** matrix, int rows, int cols, int num_threads);
+
+/**
+ * @brief Adds two matrices in parallel.
+ * @param matrix_a First matrix
+ * @param matrix_b Second matrix
+ * @param rows Number of rows
+ * @param cols Number of columns
+ * @param num_threads Number of threads to use
+ * @return Resultant matrix
+ */
+double** add_matrices(double** matrix_a, double** matrix_b, int rows, int cols, int num_threads);
+
+/**
+ * @brief Subtracts matrix_b from matrix_a in parallel.
+ * @param matrix_a First matrix
+ * @param matrix_b Second matrix
+ * @param rows Number of rows
+ * @param cols Number of columns
+ * @param num_threads Number of threads to use
+ * @return Resultant matrix
+ */
+double** subtract_matrices(double** matrix_a, double** matrix_b, int rows, int cols, int num_threads);
+
+/**
+ * @brief Performs element-wise multiplication of two matrices in parallel.
+ * @param matrix_a First matrix
+ * @param matrix_b Second matrix
+ * @param rows Number of rows
+ * @param cols Number of columns
+ * @param num_threads Number of threads to use
+ * @return Resultant matrix
+ */
+double** multiply_elementwise(double** matrix_a, double** matrix_b, int rows, int cols, int num_threads);
+
+/**
+ * @brief Performs element-wise division of two matrices in parallel.
+ *        If matrix_b[i][j] == 0, result is set to NaN.
+ * @param matrix_a First matrix
+ * @param matrix_b Second matrix
+ * @param rows Number of rows
+ * @param cols Number of columns
+ * @param num_threads Number of threads to use
+ * @return Resultant matrix
+ */
+double** divide_elementwise(double** matrix_a, double** matrix_b, int rows, int cols, int num_threads);
+
+/**
+ * @brief Multiplies two matrices in parallel.
+ * @param matrix_a First matrix (rows_a x cols_a)
+ * @param matrix_b Second matrix (cols_a x cols_b)
+ * @param rows_a Number of rows in matrix_a
+ * @param cols_a Number of columns in matrix_a (and rows in matrix_b)
+ * @param cols_b Number of columns in matrix_b
+ * @param num_threads Number of threads to use
+ * @return Resultant matrix (rows_a x cols_b)
+ */
+double** multiply_matrices(double** matrix_a, double** matrix_b, int rows_a, int cols_a, int cols_b, int num_threads);
+
+/**
+ * @brief Processes a pair of matrices: performs all operations and writes results.
+ * @param file Output file pointer
+ * @param matrix_a First matrix
+ * @param matrix_b Second matrix
+ * @param rows_a Rows in matrix_a
+ * @param cols_a Columns in matrix_a
+ * @param rows_b Rows in matrix_b
+ * @param cols_b Columns in matrix_b
+ * @param num_threads Number of threads to use
+ * @param matrix_number Index of the matrix pair
+ */
+void process_matrix_pair(FILE* file, double** matrix_a, double** matrix_b, int rows_a, int cols_a, int rows_b, int cols_b, int num_threads, int matrix_number);
 
 /**
  * @brief Main entry point. Reads matrix pairs from file, processes them, and writes results.
@@ -35,7 +139,6 @@ void process_matrix_pair(FILE* file, double** matrix_a, double** matrix_b, int r
  * @param argv Argument vector
  * @return 0 on success, non-zero on error
  */
-
 int main(int argc, char* argv[]) {
     if (argc < 3) {
         fprintf(stderr, "Usage: ./matrix <file> <threads>\n");
@@ -106,13 +209,6 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
-
-/**
- * @brief Allocates a 2D matrix of doubles.
- * @param rows Number of rows
- * @param cols Number of columns
- * @return Pointer to the allocated matrix
- */
 double** allocate_matrix(int rows, int cols) {
     double** matrix = malloc(rows * sizeof(double*));
     for (int i = 0; i < rows; i++)
@@ -120,24 +216,12 @@ double** allocate_matrix(int rows, int cols) {
     return matrix;
 }
 
-/**
- * @brief Frees a 2D matrix of doubles.
- * @param matrix Pointer to the matrix
- * @param rows Number of rows
- */
 void free_matrix(double** matrix, int rows) {
     for (int i = 0; i < rows; i++)
         free(matrix[i]);
     free(matrix);
 }
 
-/**
- * @brief Prints a matrix to a file in CSV format.
- * @param file Output file pointer
- * @param matrix Matrix to print
- * @param rows Number of rows
- * @param cols Number of columns
- */
 void print_matrix(FILE* file, double** matrix, int rows, int cols) {
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
@@ -148,13 +232,6 @@ void print_matrix(FILE* file, double** matrix, int rows, int cols) {
     }
 }
 
-/**
- * @brief Reads a matrix from a file.
- * @param file Input file pointer
- * @param out_rows Pointer to store number of rows
- * @param out_cols Pointer to store number of columns
- * @return Pointer to the allocated matrix
- */
 double** read_matrix_from_file(FILE* file, int* out_rows, int* out_cols) {
     char line[4096];
 
@@ -228,14 +305,6 @@ double** read_matrix_from_file(FILE* file, int* out_rows, int* out_cols) {
     return matrix;
 }
 
-/**
- * @brief Performs the transpose of a matrix in parallel.
- * @param matrix Input matrix
- * @param rows Number of rows in matrix
- * @param cols Number of columns in matrix
- * @param num_threads Number of threads to use
- * @return Transposed matrix
- */
 double** transpose_matrix(double** matrix, int rows, int cols, int num_threads) {
     double** transposed = allocate_matrix(cols, rows);
 #pragma omp parallel for num_threads(num_threads)
@@ -245,15 +314,6 @@ double** transpose_matrix(double** matrix, int rows, int cols, int num_threads) 
     return transposed;
 }
 
-/**
- * @brief Adds two matrices in parallel.
- * @param matrix_a First matrix
- * @param matrix_b Second matrix
- * @param rows Number of rows
- * @param cols Number of columns
- * @param num_threads Number of threads to use
- * @return Resultant matrix
- */
 double** add_matrices(double** matrix_a, double** matrix_b, int rows, int cols, int num_threads) {
     double** result = allocate_matrix(rows, cols);
 #pragma omp parallel for num_threads(num_threads)
@@ -263,15 +323,6 @@ double** add_matrices(double** matrix_a, double** matrix_b, int rows, int cols, 
     return result;
 }
 
-/**
- * @brief Subtracts matrix_b from matrix_a in parallel.
- * @param matrix_a First matrix
- * @param matrix_b Second matrix
- * @param rows Number of rows
- * @param cols Number of columns
- * @param num_threads Number of threads to use
- * @return Resultant matrix
- */
 double** subtract_matrices(double** matrix_a, double** matrix_b, int rows, int cols, int num_threads) {
     double** result = allocate_matrix(rows, cols);
 #pragma omp parallel for num_threads(num_threads)
@@ -281,15 +332,6 @@ double** subtract_matrices(double** matrix_a, double** matrix_b, int rows, int c
     return result;
 }
 
-/**
- * @brief Performs element-wise multiplication of two matrices in parallel.
- * @param matrix_a First matrix
- * @param matrix_b Second matrix
- * @param rows Number of rows
- * @param cols Number of columns
- * @param num_threads Number of threads to use
- * @return Resultant matrix
- */
 double** multiply_elementwise(double** matrix_a, double** matrix_b, int rows, int cols, int num_threads) {
     double** result = allocate_matrix(rows, cols);
 #pragma omp parallel for num_threads(num_threads)
@@ -299,16 +341,6 @@ double** multiply_elementwise(double** matrix_a, double** matrix_b, int rows, in
     return result;
 }
 
-/**
- * @brief Performs element-wise division of two matrices in parallel.
- *        If matrix_b[i][j] == 0, result is set to NaN.
- * @param matrix_a First matrix
- * @param matrix_b Second matrix
- * @param rows Number of rows
- * @param cols Number of columns
- * @param num_threads Number of threads to use
- * @return Resultant matrix
- */
 double** divide_elementwise(double** matrix_a, double** matrix_b, int rows, int cols, int num_threads) {
     double** result = allocate_matrix(rows, cols);
 #pragma omp parallel for num_threads(num_threads)
@@ -323,16 +355,6 @@ double** divide_elementwise(double** matrix_a, double** matrix_b, int rows, int 
     return result;
 }
 
-/**
- * @brief Multiplies two matrices in parallel.
- * @param matrix_a First matrix (rows_a x cols_a)
- * @param matrix_b Second matrix (cols_a x cols_b)
- * @param rows_a Number of rows in matrix_a
- * @param cols_a Number of columns in matrix_a (and rows in matrix_b)
- * @param cols_b Number of columns in matrix_b
- * @param num_threads Number of threads to use
- * @return Resultant matrix (rows_a x cols_b)
- */
 double** multiply_matrices(double** matrix_a, double** matrix_b, int rows_a, int cols_a, int cols_b, int num_threads) {
     double** result = allocate_matrix(rows_a, cols_b);
 #pragma omp parallel for num_threads(num_threads)
@@ -346,17 +368,6 @@ double** multiply_matrices(double** matrix_a, double** matrix_b, int rows_a, int
     return result;
 }
 
-/**
- * @brief Processes a pair of matrices: performs all operations and writes results.
- * @param file Output file pointer
- * @param matrix_a First matrix
- * @param matrix_b Second matrix
- * @param rows_a Rows in matrix_a
- * @param cols_a Columns in matrix_a
- * @param rows_b Rows in matrix_b
- * @param cols_b Columns in matrix_b
- * @param num_threads Number of threads to use
- */
 void process_matrix_pair(FILE* file, double** matrix_a, double** matrix_b, int rows_a, int cols_a, int rows_b, int cols_b, int num_threads, int matrix_number) {
     fprintf(file, "================================================================================\n");
     fprintf(file, "----------       First: (%d, %d)   MATRIX PAIR - %d   Second: (%d,%d)      ----------\n", rows_a, cols_a, matrix_number, rows_b, cols_b);
