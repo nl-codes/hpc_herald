@@ -13,13 +13,106 @@
 #include <stdlib.h>
 #include <string.h>
 #include <omp.h>
+#include <ctype.h>
+#include <errno.h>
 
- /**
-  * @brief Allocates a 2D matrix of doubles.
-  * @param rows Number of rows
-  * @param cols Number of columns
-  * @return Pointer to the allocated matrix
-  */
+double** allocate_matrix(int rows, int cols);
+void free_matrix(double** matrix, int rows);
+void print_matrix(FILE* file, double** matrix, int rows, int cols);
+double** read_matrix_from_file(FILE* file, int* out_rows, int* out_cols);
+double** transpose_matrix(double** matrix, int rows, int cols, int num_threads);
+double** add_matrices(double** matrix_a, double** matrix_b, int rows, int cols, int num_threads);
+double** subtract_matrices(double** matrix_a, double** matrix_b, int rows, int cols, int num_threads);
+double** multiply_elementwise(double** matrix_a, double** matrix_b, int rows, int cols, int num_threads);
+double** divide_elementwise(double** matrix_a, double** matrix_b, int rows, int cols, int num_threads);
+double** multiply_matrices(double** matrix_a, double** matrix_b, int rows_a, int cols_a, int cols_b, int num_threads);
+void process_matrix_pair(FILE* file, double** matrix_a, double** matrix_b, int rows_a, int cols_a, int rows_b, int cols_b, int num_threads, int matrix_number);
+
+
+/**
+ * @brief Main entry point. Reads matrix pairs from file, processes them, and writes results.
+ * @param argc Argument count
+ * @param argv Argument vector
+ * @return 0 on success, non-zero on error
+ */
+
+int main(int argc, char* argv[]) {
+    if (argc < 3) {
+        fprintf(stderr, "Usage: ./matrix <file> <threads>\n");
+        return 1;
+    }
+
+    // Try to open input file
+    FILE* input_file = fopen(argv[1], "r");
+    if (!input_file) {
+        fprintf(stderr, "Error: Cannot open input file '%s'.\n", argv[1]);
+        return 1;
+    }
+
+    int num_threads = atoi(argv[2]);
+    if (num_threads <= 0) {
+        fprintf(stderr, "Error: Invalid number of threads: %s\n", argv[2]);
+        fclose(input_file);
+        return 1;
+    }
+
+    // Dynamically create output file name: result_<inputfilename>
+    char output_filename[256];
+    snprintf(output_filename, sizeof(output_filename), "result_%s", argv[1]);
+    FILE* output_file = fopen(output_filename, "w");
+    if (!output_file) {
+        fprintf(stderr, "Error: Cannot open output file '%s' for writing.\n", output_filename);
+        fclose(input_file);
+        return 1;
+    }
+
+    int matrix_pair_count = 0;
+
+    // Read and process matrix pairs until end of file
+    while (1) {
+        int rows_a, cols_a, rows_b, cols_b;
+        double** matrix_a = read_matrix_from_file(input_file, &rows_a, &cols_a);
+        if (!matrix_a) {
+            if (ferror(input_file)) {
+                fprintf(stderr, "Error: File read error occurred while reading matrix A (pair %d).\n", matrix_pair_count + 1);
+            }
+            break;
+        }
+        double** matrix_b = read_matrix_from_file(input_file, &rows_b, &cols_b);
+        if (!matrix_b) {
+            if (ferror(input_file)) {
+                fprintf(stderr, "Error: File read error occurred while reading matrix B (pair %d).\n", matrix_pair_count + 1);
+            }
+            free_matrix(matrix_a, rows_a);
+            break;
+        }
+
+        matrix_pair_count++;
+        process_matrix_pair(output_file, matrix_a, matrix_b, rows_a, cols_a, rows_b, cols_b, num_threads, matrix_pair_count);
+
+        free_matrix(matrix_a, rows_a);
+        free_matrix(matrix_b, rows_b);
+    }
+
+    if (ferror(input_file)) {
+        fprintf(stderr, "Error: An error occurred while reading the input file.\n");
+    }
+    if (ferror(output_file)) {
+        fprintf(stderr, "Error: An error occurred while writing to the output file.\n");
+    }
+
+    fclose(input_file);
+    fclose(output_file);
+    return 0;
+}
+
+
+/**
+ * @brief Allocates a 2D matrix of doubles.
+ * @param rows Number of rows
+ * @param cols Number of columns
+ * @return Pointer to the allocated matrix
+ */
 double** allocate_matrix(int rows, int cols) {
     double** matrix = malloc(rows * sizeof(double*));
     for (int i = 0; i < rows; i++)
@@ -63,12 +156,75 @@ void print_matrix(FILE* file, double** matrix, int rows, int cols) {
  * @return Pointer to the allocated matrix
  */
 double** read_matrix_from_file(FILE* file, int* out_rows, int* out_cols) {
-    if (fscanf(file, "%d,%d", out_rows, out_cols) != 2)
+    char line[4096];
+
+    // Skip blank/whitespace-only lines before header
+    while (fgets(line, sizeof(line), file)) {
+        int only_space = 1;
+        for (char* p = line; *p; ++p) {
+            if (!isspace((unsigned char)*p)) { only_space = 0; break; }
+        }
+        if (!only_space) break;
+    }
+    if (feof(file)) return NULL;
+
+    // Parse header: must be "%d,%d"
+    int rows = 0, cols = 0;
+    if (sscanf(line, " %d , %d", &rows, &cols) != 2 || rows <= 0 || cols <= 0) {
+        fprintf(stderr, "Error: Invalid header format or non-positive dimensions: '%s'\n", line);
         return NULL;
-    double** matrix = allocate_matrix(*out_rows, *out_cols);
-    for (int i = 0; i < *out_rows; i++)
-        for (int j = 0; j < *out_cols; j++)
-            fscanf(file, "%lf,", &matrix[i][j]);
+    }
+    double** matrix = allocate_matrix(rows, cols);
+    if (!matrix) {
+        fprintf(stderr, "Error: Memory allocation failed for matrix of size %dx%d\n", rows, cols);
+        return NULL;
+    }
+
+    // Read each row, skipping blank/whitespace-only lines
+    for (int i = 0; i < rows; i++) {
+        while (fgets(line, sizeof(line), file)) {
+            int only_space = 1;
+            for (char* p = line; *p; ++p) {
+                if (!isspace((unsigned char)*p)) { only_space = 0; break; }
+            }
+            if (!only_space) break;
+        }
+        if (feof(file)) {
+            fprintf(stderr, "Error: Unexpected end of file. Expected %d rows, got %d.\n", rows, i);
+            free_matrix(matrix, rows);
+            return NULL;
+        }
+
+        // Parse row: must have exactly 'cols' numbers separated by ','
+        char* ptr = line;
+        for (int j = 0; j < cols; j++) {
+            while (*ptr && isspace((unsigned char)*ptr)) ptr++;
+            char* endptr;
+            errno = 0;
+            double val = strtod(ptr, &endptr);
+            if (ptr == endptr || errno != 0) {
+                fprintf(stderr, "Error: Non-numeric or missing value in row %d, col %d: '%s'\n", i + 1, j + 1, line);
+                free_matrix(matrix, rows);
+                return NULL;
+            }
+            matrix[i][j] = val;
+            ptr = endptr;
+            if (j < cols - 1) {
+                // Skip whitespace and comma
+                while (*ptr && (isspace((unsigned char)*ptr) || *ptr == ',')) ptr++;
+            }
+        }
+        // After reading expected columns, check for any non-numeric junk
+        while (*ptr && isspace((unsigned char)*ptr)) ptr++;
+        if (*ptr && *ptr != '\n' && *ptr != '\0') {
+            fprintf(stderr, "Error: Non-numeric or extra token(s) found after expected columns in row %d: '%s'\n", i + 1, line);
+            free_matrix(matrix, rows);
+            return NULL;
+        }
+    }
+
+    *out_rows = rows;
+    *out_cols = cols;
     return matrix;
 }
 
@@ -254,82 +410,4 @@ void process_matrix_pair(FILE* file, double** matrix_a, double** matrix_b, int r
         fprintf(file, "\nMatrix Multiply not possible [%d,%d] and [%d,%d] : Acols != Brows\n", rows_a, cols_a, rows_b, cols_b);
     }
     fprintf(file, "\n");
-}
-
-/**
- * @brief Main entry point. Reads matrix pairs from file, processes them, and writes results.
- * @param argc Argument count
- * @param argv Argument vector
- * @return 0 on success, non-zero on error
- */
- // ...existing code...
-
-int main(int argc, char* argv[]) {
-    if (argc < 3) {
-        fprintf(stderr, "Usage: ./matrix <file> <threads>\n");
-        return 1;
-    }
-
-    // Try to open input file
-    FILE* input_file = fopen(argv[1], "r");
-    if (!input_file) {
-        fprintf(stderr, "Error: Cannot open input file '%s'.\n", argv[1]);
-        return 1;
-    }
-
-    int num_threads = atoi(argv[2]);
-    if (num_threads <= 0) {
-        fprintf(stderr, "Error: Invalid number of threads: %s\n", argv[2]);
-        fclose(input_file);
-        return 1;
-    }
-
-    // Dynamically create output file name: result_<inputfilename>
-    char output_filename[256];
-    snprintf(output_filename, sizeof(output_filename), "result_%s", argv[1]);
-    FILE* output_file = fopen(output_filename, "w");
-    if (!output_file) {
-        fprintf(stderr, "Error: Cannot open output file '%s' for writing.\n", output_filename);
-        fclose(input_file);
-        return 1;
-    }
-
-    int matrix_pair_count = 0;
-
-    // Read and process matrix pairs until end of file
-    while (1) {
-        int rows_a, cols_a, rows_b, cols_b;
-        double** matrix_a = read_matrix_from_file(input_file, &rows_a, &cols_a);
-        if (!matrix_a) {
-            if (ferror(input_file)) {
-                fprintf(stderr, "Error: File read error occurred while reading matrix A (pair %d).\n", matrix_pair_count + 1);
-            }
-            break;
-        }
-        double** matrix_b = read_matrix_from_file(input_file, &rows_b, &cols_b);
-        if (!matrix_b) {
-            if (ferror(input_file)) {
-                fprintf(stderr, "Error: File read error occurred while reading matrix B (pair %d).\n", matrix_pair_count + 1);
-            }
-            free_matrix(matrix_a, rows_a);
-            break;
-        }
-
-        matrix_pair_count++;
-        process_matrix_pair(output_file, matrix_a, matrix_b, rows_a, cols_a, rows_b, cols_b, num_threads, matrix_pair_count);
-
-        free_matrix(matrix_a, rows_a);
-        free_matrix(matrix_b, rows_b);
-    }
-
-    if (ferror(input_file)) {
-        fprintf(stderr, "Error: An error occurred while reading the input file.\n");
-    }
-    if (ferror(output_file)) {
-        fprintf(stderr, "Error: An error occurred while writing to the output file.\n");
-    }
-
-    fclose(input_file);
-    fclose(output_file);
-    return 0;
 }
