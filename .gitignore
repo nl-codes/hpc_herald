@@ -7,3 +7,5 @@
 *.docx
 week8/device_query
 week8/learning-cuda
+week10/kernel_dimensions
+week10/MoreLearningCUDA
