@@ -12,8 +12,7 @@ struct targs_t {
   int numThreads;
 };
 
-__global__
-void quad(void* p, double* d_X1, double* d_X2) {
+__global__ void quad(void* p, double* d_X1, double* d_X2) {
   struct targs_t ptargs = ((struct targs_t*)p)[threadIdx.x];
   long end;
   unsigned long lines = ptargs.lines;
