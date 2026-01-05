@@ -6,6 +6,8 @@
 **/o/
 .DS_Store
 *.docx
+lodepng.c
+lodepng.h
 week8/device_query
 week8/learning-cuda
 week10/kernel_dimensions
