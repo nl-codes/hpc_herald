@@ -12,7 +12,7 @@
  * 5. Output Filename: Auto-generated or user-specified.
  *
  * COMPILE WITH:
- * nvcc lodepng.c sobel_gpu_optimized.cu -o sobel_gpu -lm
+ * nvcc lodepng.c sobel_gpu.cu -o sobel_gpu -lm
  *
  * USAGE:
  * ./sobel_gpu input.png                  # auto output: input_sobel_edge_output.png
