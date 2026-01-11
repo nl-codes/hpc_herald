@@ -4,6 +4,7 @@
 #include <cuda_runtime.h>
 #include <crypt.h>
 
+// --- Constants ---
 #define PASSWORD_LENGTH 4
 #define RAW_PASSWORD_LENGTH 10
 #define NUM_LETTERS 26
@@ -12,8 +13,19 @@
 #define MAX_HASH_LENGTH 256
 #define SALT "$6$AS$"
 
-// CUDA transformation function (device version)
+// --- Function Prototypes ---
+__device__ void cudaCryptDevice(const char* orgPassword, char* rawPassword);
+__global__ void generatePasswordsKernel(char* rawPasswords);
+void indexToOriginalPassword(int idx, char* password);
+
+/*
+ * __device__ void cudaCryptDevice(const char* orgPassword, char* rawPassword)
+ * ---------------------------------------------------------------------------
+ * CUDA device function to transform a 4-character password into a 10-character
+ * raw password using a custom algorithm. Handles bounds for letters and digits.
+ */
 __device__ void cudaCryptDevice(const char* orgPassword, char* rawPassword) {
+    // Transform each character according to custom rules
     rawPassword[0] = orgPassword[0] + 2;
     rawPassword[1] = orgPassword[0] - 2;
     rawPassword[2] = orgPassword[0] + 1;
@@ -25,15 +37,15 @@ __device__ void cudaCryptDevice(const char* orgPassword, char* rawPassword) {
     rawPassword[8] = orgPassword[3] + 4;
     rawPassword[9] = orgPassword[3] - 4;
 
-    // Bounds checking for a-z (97-122)
+    // Bounds checking for a-z (ASCII 97-122) and 0-9 (ASCII 48-57)
     for (int i = 0; i < 10; i++) {
-        if (i >= 0 && i < 6) {
+        if (i >= 0 && i < 6) { // First 6 are letters
             if (rawPassword[i] > 122) {
                 rawPassword[i] = (rawPassword[i] - 122) + 97;
             } else if (rawPassword[i] < 97) {
                 rawPassword[i] = (97 - rawPassword[i]) + 97;
             }
-        } else {
+        } else { // Last 4 are digits
             if (rawPassword[i] > 57) {
                 rawPassword[i] = (rawPassword[i] - 57) + 48;
             } else if (rawPassword[i] < 48) {
@@ -42,10 +54,15 @@ __device__ void cudaCryptDevice(const char* orgPassword, char* rawPassword) {
         }
     }
 
-    rawPassword[RAW_PASSWORD_LENGTH] = '\0';
+    rawPassword[RAW_PASSWORD_LENGTH] = '\0'; // Null-terminate
 }
 
-// CUDA kernel - Generate only raw passwords (original passwords are computed on-the-fly)
+/*
+ * __global__ void generatePasswordsKernel(char* rawPasswords)
+ * -----------------------------------------------------------
+ * CUDA kernel to generate all possible raw passwords from original 4-character
+ * passwords. Each thread computes one transformation and stores it in global memory.
+ */
 __global__ void generatePasswordsKernel(char* rawPasswords) {
     // Calculate unique combination index using 2D block structure
     int idx = blockIdx.x * blockDim.x * blockDim.y + threadIdx.y * blockDim.x + threadIdx.x;
@@ -59,7 +76,7 @@ __global__ void generatePasswordsKernel(char* rawPasswords) {
         int digit1_idx = remainder / NUM_DIGITS;
         int digit2_idx = remainder % NUM_DIGITS;
 
-        // Create candidate password in local memory (not stored globally)
+        // Create candidate password in local memory
         char candidate[PASSWORD_LENGTH + 1];
         candidate[0] = 'a' + letter1_idx;
         candidate[1] = 'a' + letter2_idx;
@@ -67,13 +84,17 @@ __global__ void generatePasswordsKernel(char* rawPasswords) {
         candidate[3] = '0' + digit2_idx;
         candidate[PASSWORD_LENGTH] = '\0';
 
-        // Apply transformation to get raw string and store in global memory
+        // Transform and store in global memory
         char* rawPassword = &rawPasswords[idx * (RAW_PASSWORD_LENGTH + 1)];
         cudaCryptDevice(candidate, rawPassword);
     }
 }
 
-// Helper function to regenerate original password from index on CPU
+/*
+ * void indexToOriginalPassword(int idx, char* password)
+ * -----------------------------------------------------
+ * Helper function to regenerate the original 4-character password from its index.
+ */
 void indexToOriginalPassword(int idx, char* password) {
     int letter1_idx = idx / (NUM_LETTERS * NUM_DIGITS * NUM_DIGITS);
     int remainder = idx % (NUM_LETTERS * NUM_DIGITS * NUM_DIGITS);
@@ -89,6 +110,12 @@ void indexToOriginalPassword(int idx, char* password) {
     password[PASSWORD_LENGTH] = '\0';
 }
 
+/*
+ * int main(int argc, char* argv[])
+ * --------------------------------
+ * Main function. Loads target hashes, launches CUDA kernel to generate raw passwords,
+ * compares hashes, and writes results to file.
+ */
 int main(int argc, char* argv[]) {
     if (argc != 2) {
         printf("Usage: %s <path_to_EncryptedPasswords.txt>\n", argv[0]);
@@ -105,8 +132,8 @@ int main(int argc, char* argv[]) {
     char targetHashes[10][MAX_HASH_LENGTH];
     int numHashes = 0;
 
+    // Read up to 10 hashes, removing newlines
     while (fgets(targetHashes[numHashes], sizeof(targetHashes[0]), file) && numHashes < 10) {
-        // Remove newline
         size_t len = strlen(targetHashes[numHashes]);
         if (len > 0 && targetHashes[numHashes][len - 1] == '\n') {
             targetHashes[numHashes][len - 1] = '\0';
@@ -118,7 +145,7 @@ int main(int argc, char* argv[]) {
     printf("Loaded %d target hashes\n", numHashes);
     printf("Using salt: %s\n\n", SALT);
 
-    // Allocate device memory ONLY for raw passwords
+    // Allocate device memory for raw passwords
     char* d_rawPasswords;
     cudaError_t err;
 
@@ -128,7 +155,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // Configure kernel with 2D block dimensions
+    // Configure kernel launch parameters
     dim3 blockSize(16, 16);
     int threadsPerBlock = blockSize.x * blockSize.y;
     int blocksPerGrid = (TOTAL_COMBINATIONS + threadsPerBlock - 1) / threadsPerBlock;
@@ -151,7 +178,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // Allocate host memory ONLY for raw passwords
+    // Allocate host memory for raw passwords
     char* h_rawPasswords = (char*)malloc(TOTAL_COMBINATIONS * (RAW_PASSWORD_LENGTH + 1) * sizeof(char));
 
     // Copy results back to host
@@ -162,11 +189,12 @@ int main(int argc, char* argv[]) {
 
     printf("Passwords copied to host. Starting SHA512 comparison on CPU...\n\n");
 
-    // Array to store cracked password indices in their original hash positions
+    // Arrays to store cracked password indices and flags
     int crackedIndices[10];
     int crackedFlags[10] = { 0 }; // Track which positions have been cracked
     int crackedCount = 0;
 
+    // Compare each raw password's hash to target hashes
     for (int i = 0; i < TOTAL_COMBINATIONS && crackedCount < numHashes; i++) {
         char* rawPassword = &h_rawPasswords[i * (RAW_PASSWORD_LENGTH + 1)];
 
@@ -190,8 +218,8 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        // Progress indicator
-        if ((i + 1) % 10000 == 0) {
+        // Progress indicator every 10,000 combinations
+        if ((i + 1) % 12000 == 0) {
             printf("Tested %d/%d combinations... (found %d)\n", i + 1, TOTAL_COMBINATIONS, crackedCount);
         }
     }
