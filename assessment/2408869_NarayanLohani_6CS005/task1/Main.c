@@ -1,17 +1,15 @@
 /*
- * Multithreaded Word Counter
- * --------------------------
+ * Word Occurance Counter
+ * ----------------------------------------------------------------------------
  * This program reads a text file, splits the work among multiple threads,
  * and counts the occurrences of each word (case-insensitive, alphanumeric only).
- * Results are written to "result.txt" in sorted order.
- *
- * Thread boundaries are adjusted to word boundaries to avoid splitting words.
- * Each thread processes a unique chunk of the file, and a mutex is used to
- * synchronize access to the shared word count array.
- *
+ * Results are written to "result.txt" in alphabetically ascending order.
+ * ----------------------------------------------------------------------------
  * Usage:
- *   ./output <num_threads> <file_name>
+ *      gcc -pthread Main.c -o exe
+ *      ./exe <file_name> <num_threads>
  */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -61,6 +59,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    // Extract number of threads
     int num_threads = atoi(argv[2]);
     if (num_threads <= 0) {
         printf("Number of threads must be greater than 0.\n");
