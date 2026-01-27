@@ -81,7 +81,7 @@ The solution uses POSIX threads (pthreads) to parallelize the word counting proc
 - **Case-Insensitive & Alphanumeric:** Words are normalized to lowercase and only alphanumeric characters are considered.
 - **Thread-Safe Aggregation:** A mutex ensures that updates to the shared word count array are safe from race conditions.
 - **Sorted Output:** The final word counts are sorted alphabetically before being written to the output file.
-- **Simple Usage:** The program is run as `./output <file_name> <num_threads>`, and results are written to `result.txt`.
+- **Simple Usage:** The program is run as `./<object_file> <file_name> <num_threads>`, and results are written to `result.txt`.
 
 ### How It Works (Gist)
 
@@ -221,8 +221,8 @@ The correct thread division lies in `fix_thread_boundaries()`:
 ### Example Usage
 
 ```sh
-gcc -pthread Main.c -o output
-./output WordOccurrenceDataset.txt 8
+gcc -pthread Main.c -o exe
+./exe WordOccurrenceDataset.txt 8
 ```
 
 The output will be written to `result.txt` in the format:
