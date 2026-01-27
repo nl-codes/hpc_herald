@@ -1,23 +1,17 @@
-/************************************************************************
- * PROGRAM DESCRIPTION:
- * This program applies Sobel edge detection to a PNG image using CUDA GPU.
- * Optimized version: Grayscale conversion is performed inside the kernel.
- *
- * CORE OPERATIONS:
- * 1. PNG Decoding: Loads 32-bit RGBA image using LodePNG.
- * 2. Data Transfer: Transfers full RGBA image to GPU.
- * 3. Full GPU Processing: Both grayscale conversion and Sobel convolution
- *    (with zero-padding and magnitude) done in one kernel.
- * 4. Result: Single-channel edge map returned and saved as grayscale PNG.
- * 5. Output Filename: Auto-generated or user-specified.
- *
- * COMPILE WITH:
- * nvcc lodepng.c sobel_gpu.cu -o sobel_gpu -lm
- *
- * USAGE:
- * ./sobel_gpu input.png                  # auto output: input_sobel_edge_output.png
- * ./sobel_gpu input.png custom.png       # explicit output
- ************************************************************************/
+/*
+ * GPU-Accelerated Sobel Edge Detector
+ * ----------------------------------------------------------------------------
+ * This program detects the edges of an PNG image using the Sobel operator. It
+ * optimizes performance by combining the grayscale conversion and the convolution
+ * spatial filtering into a single GPU kernel, which reduces global memory access.
+ * The program utilizes constant memory for kernel masks. For boundaries zero-padding
+ * is used. The edge map is saved into another PNG file.
+ * ----------------------------------------------------------------------------
+ * Usage:
+ *      nvcc lodepng.c sobel_gpu.cu -o sobel_gpu -lm
+ *      ./sobel_gpu <input.png>                 # Auto-generates output name
+ *      ./sobel_gpu <input.png> <output.png>    # Custom output name
+ */
 
 #include "lodepng.h"
 #include <stdio.h>
@@ -29,13 +23,6 @@
  /* CUDA error checking macro */
 #define CUDA_CHECK(err) do { if (err != cudaSuccess) { fprintf(stderr, "CUDA Error: %s at %s:%d\n", cudaGetErrorString(err), __FILE__, __LINE__); exit(1); } } while (0)
 
-/* Device clamp function */
-__device__ static unsigned char clamp255(int v) {
-    if (v < 0) return 0;
-    if (v > 255) return 255;
-    return (unsigned char)v;
-}
-
 /* Generate output filename */
 static void generate_output_filename(char* dest, size_t dest_size, const char* input_filename) {
     const char* ext = strrchr(input_filename, '.');
@@ -45,6 +32,13 @@ static void generate_output_filename(char* dest, size_t dest_size, const char* i
     } else {
         snprintf(dest, dest_size, "%s_sobel_edge_output.png", input_filename);
     }
+}
+
+/* Device clamp function */
+__device__ static unsigned char clamp255(int v) {
+    if (v < 0) return 0;
+    if (v > 255) return 255;
+    return (unsigned char)v;
 }
 
 /* Constant memory for Sobel kernels */
