@@ -249,4 +249,5 @@ void write_results(const char* filename) {
     for (int i = 0; i < word_count; i++)
         fprintf(out, "%s %d\n", words[i].word, words[i].count);
     fclose(out);
+    printf("Word and their occurence count has been written to \"result.txt\"\n");
 }
