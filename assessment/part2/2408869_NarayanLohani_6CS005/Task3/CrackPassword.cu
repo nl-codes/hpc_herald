@@ -1,10 +1,24 @@
+/*
+ * Brute-Force Password Cracker
+ * ----------------------------------------------------------------------------
+ * This program performs a brute-force search to decrypt SHA512 hashes by reversing
+ *  a custom cryptographic transformation (cudaCrypt). It uses a CUDA kernel to
+ * create all possible 67,600 password combinations ([a-z][a-z][0-9][0-9]),
+ * transforms them into 10-character raw strings using cudaCrypt, and
+ * compares them against target hashes on the CPU.
+ * ----------------------------------------------------------------------------
+ * Usage:
+ * nvcc password_cracker.cu -o cracker -lcrypt
+ * ./cracker EncryptedPasswords.txt
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <cuda_runtime.h>
 #include <crypt.h>
 
-// --- Constants ---
+ // --- Constants ---
 #define PASSWORD_LENGTH 4
 #define RAW_PASSWORD_LENGTH 10
 #define NUM_LETTERS 26
@@ -13,14 +27,8 @@
 #define MAX_HASH_LENGTH 256
 #define SALT "$6$AS$"
 
-// --- Function Prototypes ---
-__device__ void cudaCryptDevice(const char* orgPassword, char* rawPassword);
-__global__ void generatePasswordsKernel(char* rawPasswords);
-void indexToOriginalPassword(int idx, char* password);
 
 /*
- * __device__ void cudaCryptDevice(const char* orgPassword, char* rawPassword)
- * ---------------------------------------------------------------------------
  * CUDA device function to transform a 4-character password into a 10-character
  * raw password using a custom algorithm. Handles bounds for letters and digits.
  */
@@ -58,8 +66,6 @@ __device__ void cudaCryptDevice(const char* orgPassword, char* rawPassword) {
 }
 
 /*
- * __global__ void generatePasswordsKernel(char* rawPasswords)
- * -----------------------------------------------------------
  * CUDA kernel to generate all possible raw passwords from original 4-character
  * passwords. Each thread computes one transformation and stores it in global memory.
  */
@@ -91,8 +97,6 @@ __global__ void generatePasswordsKernel(char* rawPasswords) {
 }
 
 /*
- * void indexToOriginalPassword(int idx, char* password)
- * -----------------------------------------------------
  * Helper function to regenerate the original 4-character password from its index.
  */
 void indexToOriginalPassword(int idx, char* password) {
@@ -111,8 +115,6 @@ void indexToOriginalPassword(int idx, char* password) {
 }
 
 /*
- * int main(int argc, char* argv[])
- * --------------------------------
  * Main function. Loads target hashes, launches CUDA kernel to generate raw passwords,
  * compares hashes, and writes results to file.
  */
@@ -218,7 +220,7 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        // Progress indicator every 10,000 combinations
+        // Progress indicator every 12,000 combinations
         if ((i + 1) % 12000 == 0) {
             printf("Tested %d/%d combinations... (found %d)\n", i + 1, TOTAL_COMBINATIONS, crackedCount);
         }
