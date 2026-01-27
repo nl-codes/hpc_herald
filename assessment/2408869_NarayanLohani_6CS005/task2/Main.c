@@ -1,16 +1,14 @@
 /*
- * Parallel Matrix Operations with OpenMP
- * --------------------------------------
- * This program reads pairs of matrices from a file, performs various operations
- * (addition, subtraction, element-wise multiplication/division, transpose, and matrix multiplication)
- * using OpenMP for parallelism, and writes the results to "result_<inputfilename>".
+ * Matrix Operations with OpenMP
+ * ----------------------------------------------------------------------------
+ * This program reads pairs of matrices from a file, performs operations such as
+ * addition, subtraction, element-wise multiplication/division, transpose,
+ * and matrix multiplication using OpenMP, and writes the results to
+ * "result_<inputfilename>".
  *
- * Features:
- * - Robust error handling for file I/O and matrix parsing.
- * - Skips blank/whitespace lines in input.
- * - Validates matrix headers and row/column counts.
- * - Handles non-numeric tokens gracefully.
- * - Modular, documented code.
+ * Usage:
+ *      gcc -fopenmp Main.c -o exe
+ *      ./exe <file_name> <num_threads>
  */
 
 #include <stdio.h>

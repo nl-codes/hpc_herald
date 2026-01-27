@@ -334,12 +334,12 @@ This solution leverages OpenMP to parallelize matrix operations for improved per
 ### Example Usage
 
 ```sh
-gcc -fopenmp Main.c -o matrix
-./matrix MatData.txt 8
-./matrix Matrices.txt 10
+gcc -fopenmp Main.c -o exe
+./exe MatData.txt 8
+./exe Matrices.txt 10
 ```
 
-The output will be written to `result_MatData.txt` in the same directory.
+The output will be written to `result_MatData.txt` and  `result_Matrices.txt` in the same directory.
 
 ### Files
 
