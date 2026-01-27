@@ -5,7 +5,7 @@
  * addition, subtraction, element-wise multiplication/division, transpose,
  * and matrix multiplication using OpenMP, and writes the results to
  * "result_<inputfilename>".
- *
+ * ----------------------------------------------------------------------------
  * Usage:
  *      gcc -fopenmp Main.c -o exe
  *      ./exe <file_name> <num_threads>

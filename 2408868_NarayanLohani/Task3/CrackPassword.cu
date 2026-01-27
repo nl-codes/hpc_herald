@@ -8,8 +8,8 @@
  * compares them against target hashes on the CPU.
  * ----------------------------------------------------------------------------
  * Usage:
- * nvcc password_cracker.cu -o cracker -lcrypt
- * ./cracker EncryptedPasswords.txt
+ *      nvcc password_cracker.cu -o cracker -lcrypt
+ *      ./cracker EncryptedPasswords.txt
  */
 
 #include <stdio.h>
