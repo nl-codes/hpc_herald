@@ -1,3 +1,17 @@
+/*
+ * Password Generator
+ * ----------------------------------------------------------------------------
+ * This program generates 10 random 4-character passwords and applies a custom
+ * transformation algorithm (cudaCrypt) to expand them into 10-character strings.
+ * These transformed strings are then hashed using the SHA512 algorithm with a
+ * predefined salt. The program outputs two files one with the final hashes and
+ * another a reference to original password for verification.
+ * ----------------------------------------------------------------------------
+ * Usage:
+ * gcc password_gen.c -o create -lcrypt
+ * ./create
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,22 +20,9 @@
 
 #define SALT "$6$AS$"
 
-/*
- * Function: cudaCrypt
- * -------------------
- *  Transforms a 4-character password into a 10-character raw password using a custom algorithm.
- *
- *  orgPassword: The original 4-character password (format: [a-z][a-z][0-9][0-9])
- *  rawPassword: The output buffer for the transformed 10-character password (must be at least 11 bytes)
- *
- *  The function applies arithmetic transformations to each character and ensures
- *  the resulting characters stay within the valid ranges for lowercase letters and digits.
- */
 void cudaCrypt(const char* orgPassword, char* rawPassword);
 
 /*
- * Function: main
- * --------------
  * Entry point of the program. Generates random passwords, transforms and hashes them,
  * and writes the results to output files.
  */
@@ -96,13 +97,16 @@ int main() {
     return 0;
 }
 
+/**
+ * @brief Transforms a 4-character password into a 10-character raw password using a custom algorithm.
+ *  @param orgPassword: The original 4-character password (format: [a-z][a-z][0-9][0-9])
+ *  @param rawPassword: The output buffer for the transformed 10-character password
+ *
+ * The first 6 characters are based on the first two letters (a-z),
+ * the last 4 are based on the two digits (0-9).
+ * Bounds checking ensures all characters remain valid.
+ */
 void cudaCrypt(const char* orgPassword, char* rawPassword) {
-    /*
-     * Transforms the original password into a 10-character raw password.
-     * The first 6 characters are based on the first two letters (a-z),
-     * the last 4 are based on the two digits (0-9).
-     * Bounds checking ensures all characters remain valid.
-     */
     rawPassword[0] = orgPassword[0] + 2;
     rawPassword[1] = orgPassword[0] - 2;
     rawPassword[2] = orgPassword[0] + 1;
