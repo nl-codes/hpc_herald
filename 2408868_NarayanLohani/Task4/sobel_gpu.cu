@@ -8,7 +8,7 @@
  * is used. The edge map is saved into another PNG file.
  * ----------------------------------------------------------------------------
  * Usage:
- *      nvcc lodepng.c sobel_gpu.cu -o sobel_gpu -lm
+ *      nvcc lodepng.cpp sobel_gpu.cu -o sobel_gpu -lm
  *      ./sobel_gpu <input.png>                 # Auto-generates output name
  *      ./sobel_gpu <input.png> <output.png>    # Custom output name
  */
@@ -117,7 +117,6 @@ int main(int argc, char* argv[]) {
     /* Display image information */
     printf("Input Image      : %s\n", input_filename);
     printf("Image Dimensions : %u x %u pixels\n", width, height);
-    printf("Output Image     : %s\n", output_filename);
 
     size_t pixels = width * height;
 
