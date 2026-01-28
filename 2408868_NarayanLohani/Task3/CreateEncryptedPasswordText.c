@@ -8,7 +8,7 @@
  * another a reference to original password for verification.
  * ----------------------------------------------------------------------------
  * Usage:
- *      gcc password_gen.c -o create -lcrypt
+ *      gcc CreateEncryptedPasswordText.c -o create -lcrypt
  *      ./create
  */
 
