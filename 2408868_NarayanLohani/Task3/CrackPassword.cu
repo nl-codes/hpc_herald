@@ -8,7 +8,7 @@
  * compares them against target hashes on the CPU.
  * ----------------------------------------------------------------------------
  * Usage:
- *      nvcc password_cracker.cu -o cracker -lcrypt
+ *      nvcc CrackPassword.cu -o cracker -lcrypt
  *      ./cracker EncryptedPasswords.txt
  */
 
@@ -179,6 +179,7 @@ int main(int argc, char* argv[]) {
         printf("Kernel launch error: %s\n", cudaGetErrorString(err));
         return 1;
     }
+    printf("All combination generated and encrypted successfully\n");
 
     // Allocate host memory for raw passwords
     char* h_rawPasswords = (char*)malloc(TOTAL_COMBINATIONS * (RAW_PASSWORD_LENGTH + 1) * sizeof(char));
@@ -215,14 +216,14 @@ int main(int argc, char* argv[]) {
                 char orgPassword[PASSWORD_LENGTH + 1];
                 indexToOriginalPassword(i, orgPassword);
 
-                printf("Found match for hash %d! Password: %s -> Raw: %s\n", h + 1, orgPassword, rawPassword);
+                printf("Found match for hash %d! Original: %s -> Raw: %s\n", h + 1, orgPassword, rawPassword);
                 break;
             }
         }
 
         // Progress indicator every 12,000 combinations
         if ((i + 1) % 12000 == 0) {
-            printf("Tested %d/%d combinations... (found %d)\n", i + 1, TOTAL_COMBINATIONS, crackedCount);
+            printf("Tested %d/%d combinations... (found %d)\n\n", i + 1, TOTAL_COMBINATIONS, crackedCount);
         }
     }
 
@@ -237,10 +238,8 @@ int main(int argc, char* argv[]) {
                 char orgPassword[PASSWORD_LENGTH + 1];
                 indexToOriginalPassword(crackedIndices[i], orgPassword);
 
-                printf("Hash line %d: %s\n", i + 1, orgPassword);
                 fprintf(resultFile, "%s\n", orgPassword);
             } else {
-                printf("Hash line %d: NOT CRACKED\n", i + 1);
                 fprintf(resultFile, "\n"); // Empty line for uncracked hashes
             }
         }
